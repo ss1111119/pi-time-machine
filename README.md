@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Pi Time Machine（π 的時光機）
 
 Pi Time Machine 是一個為高中生與數學愛好者設計的互動式網頁專案，
@@ -86,6 +85,3 @@ Pi_History_Interactive.html
 This project is licensed under the MIT License.
 
 You are free to use it for education, presentation, and personal learning.
-=======
-# pi-time-machine
->>>>>>> 23c164cc780f62dc532330adabe2e10b1a83e9d1
