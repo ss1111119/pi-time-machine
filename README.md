@@ -10,7 +10,7 @@ Pi Time Machine 是一個為高中生與數學愛好者設計的互動式網頁�
 
 GitHub Pages（請替換為你的實際網址）：
 
-https://你的帳號.github.io/pi-time-machine/
+https://ss1111119.github.io/pi-time-machine/
 
 ---
 
@@ -72,7 +72,7 @@ https://你的帳號.github.io/pi-time-machine/
 
 Clone repository：
 
-git clone https://github.com/你的帳號/pi-time-machine.git
+git clone https://github.com/ss1111119/pi-time-machine.git
 
 Open the file directly in your browser：
 
