@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>π 的時光機｜互動歷史課</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --math-bg: #0f172a;
+      --border: rgba(255,255,255,0.1);
+      --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    header {
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,23,42,0.9);
+      z-index: 10;
+    }
+    h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+    .subtitle { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+    .nav-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      padding: 10px;
+      background: var(--bg);
+    }
+    .tab {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #94a3b8;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .tab.active {
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    main {
+      flex: 1;
+      position: relative;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    
+    .stage {
+      display: none;
+      width: 100%;
+      max-width: 600px;
+      flex-direction: column;
+      gap: 15px;
+      animation: fadeIn 0.4s ease;
+      padding-bottom: 40px;
+    }
+    .stage.active { display: flex; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .card h2 { margin: 0 0 10px; font-size: 16px; color: #fff; display:flex; justify-content:space-between; align-items:center; }
+    .card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin: 0 0 15px; }
+    
+    .badge { 
+      font-size: 11px; padding: 2px 8px; border-radius: 10px; 
+      background: rgba(255,255,255,0.1); color: #cbd5e1; font-weight: normal;
+    }
+
+    .viz-box {
+      background: #000;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      height: 250px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+    canvas { width: 100%; height: 100%; display: block; }
+    
+    .overlay-stat {
+      position: absolute;
+      top: 10px; left: 10px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--accent);
+      background: rgba(0,0,0,0.6);
+      padding: 4px 8px;
+      border-radius: 6px;
+      pointer-events: none;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    button:active { transform: scale(0.96); }
+    button.secondary { background: rgba(255,255,255,0.1); color: #fff; }
+
+    .math-box {
+      margin-top: 15px;
+      background: var(--math-bg);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+    .math-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    .math-content {
+      font-family: var(--font-mono);
+      line-height: 1.5;
+    }
+    .math-hl { color: #facc15; }
+
+    .info-box {
+      font-size: 13px;
+      color: #64748b;
+      border-top: 1px solid var(--border);
+      padding: 15px;
+      text-align: center;
+      background: var(--bg);
+    }
+    .highlight { color: var(--accent); font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>π 的時光機</h1>
+  <div class="subtitle">從繩子到超級電腦的演進史</div>
+</header>
+
+<div class="nav-tabs">
+  <div class="tab active" onclick="switchStage(0)">1. 實測</div>
+  <div class="tab" onclick="switchStage(1)">2. 割圓</div>
+  <div class="tab" onclick="switchStage(2)">3. 級數</div>
+  <div class="tab" onclick="switchStage(3)">4. 模擬</div>
+</div>
+
+<main>
+  <!-- STAGE 1 -->
+  <div class="stage active" id="stage0">
+    <div class="card">
+      <h2>實測時代 (西元前 2000年) <span class="badge">巴比倫/埃及</span></h2>
+      <p>古代人能量出直徑與周長的比例。拿個輪子在地上滾一圈量量看吧！</p>
+      <div class="viz-box">
+        <canvas id="c0"></canvas>
+        <div class="overlay-stat" id="s0">距離: 0.00</div>
+      </div>
+      <div class="control-row">
+        <span style="font-size:12px; color:#94a3b8">滾動輪子:</span>
+        <input type="range" id="r0" min="0" max="100" value="0">
+      </div>
+      <div class="math-box">
+        <div class="math-title">數學原理</div>
+        <div class="math-content">
+          圓周率定義：<span class="math-hl">&pi; = C / d</span><br>
+          <small>(C:圓周長, d:直徑)</small><br><br>
+          若直徑 d=1，則滾動一圈的距離 C 應為 &pi;。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 2 -->
+  <div class="stage" id="stage1">
+    <div class="card">
+      <h2>割圓術 (西元前 250年) <span class="badge">阿基米德/祖沖之</span></h2>
+      <p>利用正多邊形逼近圓形。邊數越多，周長就越接近圓周。</p>
+      <div class="viz-box">
+        <canvas id="c1"></canvas>
+        <div class="overlay-stat" id="s1">邊數: 6</div>
+      </div>
+      <div class="control-row">
+        <span style="font-size:12px; color:#94a3b8">切割邊數 (N):</span>
+        <input type="range" id="r1" min="3" max="100" value="6">
+      </div>
+      <div style="margin-top:8px; text-align:right;">
+        <button class="secondary" style="font-size:12px; padding:4px 10px;" onclick="setPoly(24576)">挑戰祖沖之 (24576邊)</button>
+      </div>
+      <div class="math-box">
+        <div class="math-title">高中數學連結：極限與三角</div>
+        <div class="math-content">
+          內接正 N 邊形周長 <span class="math-hl">P<sub>n</sub> = N &middot; 2r &middot; sin(&pi;/N)</span><br><br>
+          當 N &rarr; &infin;，P<sub>n</sub> &rarr; 2&pi;r (圓周)。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 3 -->
+  <div class="stage" id="stage2">
+    <div class="card">
+      <h2>無窮級數 (17世紀) <span class="badge">萊布尼茲/歐拉</span></h2>
+      <p>數學家發現泰勒級數。只要加減數字規律，就能算出 π。</p>
+      <div class="viz-box">
+        <canvas id="c2"></canvas>
+        <div class="overlay-stat" id="s2">項數: 0</div>
+      </div>
+      <div class="control-row">
+        <button onclick="stepSeries()">+ 加一項</button>
+        <button class="secondary" onclick="autoSeries()" id="btnAutoSeries">自動計算</button>
+        <button class="secondary" onclick="resetSeries()">重置</button>
+      </div>
+      <div class="math-box">
+        <div class="math-title">大學先修：泰勒級數</div>
+        <div class="math-content">
+          &pi;/4 = arctan(1) = 1 - 1/3 + 1/5 - 1/7 ...<br>
+          此即著名的 <span class="math-hl">Leibniz formula</span>。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 4 -->
+  <div class="stage" id="stage3">
+    <div class="card">
+      <h2>蒙地卡羅 (20世紀) <span class="badge">馮紐曼/現代電腦</span></h2>
+      <p>利用隨機投點與面積比例來估算 π。</p>
+      <div class="viz-box">
+        <canvas id="c3"></canvas>
+        <div class="overlay-stat" id="s3">點數: 0</div>
+      </div>
+      <div class="control-row">
+        <button onclick="startMC()" id="btnMC">發射飛彈 (Auto)</button>
+        <button class="secondary" onclick="resetMC()">清除</button>
+      </div>
+      <div class="math-box">
+        <div class="math-title">幾何機率</div>
+        <div class="math-content">
+          <span class="math-hl">&pi; &approx; 4 &times; (圓內點數 / 總點數)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="info-box">
+  目前的紀錄已超過 <span class="highlight">100 兆位</span>。
+</div>
+
+<script>
+const PI = Math.PI;
+function fit(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return { ctx: null, w: 0, h: 0 };
+  if(c.width !== rect.width * dpr || c.height !== rect.height * dpr){
+    c.width = rect.width * dpr;
+    c.height = rect.height * dpr;
+  }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: rect.width, h: rect.height };
+}
+
+const stages = document.querySelectorAll('.stage');
+const tabs = document.querySelectorAll('.tab');
+function switchStage(idx) {
+  stages.forEach((s, i) => s.classList.toggle('active', i === idx));
+  tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+  if(idx===0) drawWheel();
+  if(idx===1) drawPoly();
+  if(idx===2) drawSeries();
+  if(idx===3) drawMC();
+}
+
+// Stage 1
+const c0 = document.getElementById('c0');
+const r0 = document.getElementById('r0');
+const s0 = document.getElementById('s0');
+function drawWheel() {
+  const { ctx, w, h } = fit(c0);
+  if (!ctx) return;
+  ctx.clearRect(0,0,w,h);
+  const progress = r0.value / 100;
+  const radius = 40;
+  const startX = 60;
+  const maxDist = w - 120;
+  const currentX = startX + maxDist * progress;
+  const dist = maxDist * progress;
+  const theta = dist / radius;
+  ctx.beginPath(); ctx.strokeStyle = "#64748b"; ctx.lineWidth = 2;
+  ctx.moveTo(0, h/2 + radius + 2); ctx.lineTo(w, h/2 + radius + 2); ctx.stroke();
+  ctx.beginPath(); ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 4;
+  ctx.moveTo(startX, h/2 + radius + 2); ctx.lineTo(currentX, h/2 + radius + 2); ctx.stroke();
+  ctx.save(); ctx.translate(currentX, h/2); ctx.rotate(theta);
+  ctx.beginPath(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.arc(0, 0, radius, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
+  s0.innerText = `滾動距離=${(theta / (2*PI) * 3.14159).toFixed(5)}`;
+}
+r0.addEventListener('input', drawWheel);
+
+// Stage 2
+const c1 = document.getElementById('c1');
+const r1 = document.getElementById('r1');
+const s1 = document.getElementById('s1');
+let customSides = 0;
+function setPoly(n) { customSides = n; r1.value = 100; drawPoly(); }
+function drawPoly() {
+  const { ctx, w, h } = fit(c1);
+  if (!ctx) return;
+  ctx.clearRect(0,0,w,h);
+  const sides = customSides > 0 ? customSides : parseInt(r1.value);
+  const r = Math.max(0, Math.min(w,h)/2 - 30);
+  const cx = w/2, cy = h/2;
+  ctx.beginPath(); ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.setLineDash([5,5]); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 2;
+  for(let i=0; i<=sides; i++) {
+    const ang = (i / sides) * Math.PI * 2 - Math.PI/2;
+    ctx.lineTo(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r);
+  }
+  ctx.stroke();
+  s1.innerText = `N=${sides}, π ≈ ${(sides * Math.sin(PI/sides)).toFixed(7)}`;
+}
+r1.addEventListener('input', drawPoly);
+
+// Stage 3
+const c2 = document.getElementById('c2');
+const s2 = document.getElementById('s2');
+let seriesN = 0, seriesVal = 0, seriesTimer = null;
+function resetSeries() { clearInterval(seriesTimer); seriesTimer = null; seriesN = 0; seriesVal = 0; document.getElementById('btnAutoSeries').innerText = "自動計算"; drawSeries(); }
+function stepSeries() { seriesVal += (seriesN % 2 === 0 ? 1 : -1) / (2*seriesN + 1); seriesN++; drawSeries(); }
+function autoSeries() { if(seriesTimer) { clearInterval(seriesTimer); seriesTimer = null; } else { seriesTimer = setInterval(stepSeries, 50); } }
+function drawSeries() {
+  const { ctx, w, h } = fit(c2);
+  if (!ctx) return;
+  ctx.clearRect(0,0,w,h);
+  const xPi = w/2 + (PI - 3.14159) * (w/2);
+  ctx.beginPath(); ctx.strokeStyle = "#a855f7"; ctx.moveTo(xPi, 20); ctx.lineTo(xPi, h-20); ctx.stroke();
+  const currentPi = seriesVal * 4;
+  ctx.beginPath(); ctx.fillStyle = "#38bdf8"; ctx.arc(w/2 + (currentPi - 3.14159) * (w/2), h/2, 6, 0, Math.PI*2); ctx.fill();
+  s2.innerText = `項數: ${seriesN}, π ≈ ${currentPi.toFixed(7)}`;
+}
+
+// Stage 4
+const c3 = document.getElementById('c3');
+const s3 = document.getElementById('s3');
+let mcPoints = [], mcTotal = 0, mcInside = 0, mcTimer = null;
+function resetMC() { clearInterval(mcTimer); mcTimer = null; mcPoints = []; mcTotal = 0; mcInside = 0; drawMC(); }
+function startMC() { if(mcTimer) { clearInterval(mcTimer); mcTimer = null; } else { mcTimer = setInterval(() => { for(let i=0; i<50; i++) { const x = Math.random()*2-1, y = Math.random()*2-1; const isIn = x*x+y*y<=1; mcPoints.push({x,y,in:isIn}); mcTotal++; if(isIn) mcInside++; } if(mcPoints.length > 1000) mcPoints.splice(0,50); drawMC(); }, 16); } }
+function drawMC() {
+  const { ctx, w, h } = fit(c3);
+  if (!ctx) return;
+  ctx.clearRect(0,0,w,h);
+  const r = Math.max(0, Math.min(w,h)/2 - 10), cx = w/2, cy = h/2;
+  ctx.beginPath(); ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  for(let p of mcPoints) { ctx.fillStyle = p.in ? "#38bdf8" : "#64748b"; ctx.fillRect(cx + p.x*r, cy + p.y*r, 2, 2); }
+  s3.innerText = `點數: ${mcTotal}, π ≈ ${(mcTotal > 0 ? 4 * (mcInside/mcTotal) : 0).toFixed(5)}`;
+}
+
+window.addEventListener('resize', () => { drawWheel(); drawPoly(); drawSeries(); drawMC(); });
+switchStage(0);
+</script>
+</body>
+</html>
